@@ -39,5 +39,5 @@ part2-big: input-big.h
 	strip $@
 
 clean:
-	rm -f part{1,2}
-	rm -f input.h
+	rm -f part{1,2}{,-big}
+	rm -f input{,-big}.h
