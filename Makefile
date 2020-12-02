@@ -1,5 +1,5 @@
 
-DAYS= day1
+DAYS= $(wildcard day*)
 
 .PHONY: all
 
@@ -9,5 +9,5 @@ day%/part2: day%
 all: $(addsuffix /part2,$(DAYS))
 
 clean:
-	for d in "$(shell find . -type d -name day\*)"; do cd $$d && $(MAKE) clean; done
+	for d in $(DAYS); do pushd $$d && $(MAKE) clean && popd; done
 		
