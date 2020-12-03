@@ -13,15 +13,18 @@ CFLAGS?=$(COMMMON_FLAGS) --std=gnu11 $(C_OPT_FLAGS)
 CXXFLAGS?=$(COMMON_FLAGS) --std=gnu++20 $(CXX_OPT_FLAGS)
 LDFLAGS?=$(LD_OPT_FLAGS)
 
-DAYS= $(wildcard day*)
+CXXFLAGS+= -fno-exceptions
 
 .PHONY: all
+all: part1 part2
 
-day%/part2: day%
-	cd $< && $(MAKE)
+part1: day3.cpp
+	$(CXX) $< $(CXXFLAGS) -o $@ $(LDFLAGS)
+	strip $@
 
-all: $(addsuffix /part2,$(DAYS))
+part2: day3.cpp
+	$(CXX) $< -DPART2 $(CXXFLAGS) -o $@ $(LDFLAGS)
+	strip $@
 
 clean:
-	for d in $(DAYS); do pushd $$d && $(MAKE) clean && popd; done
-		
+	rm -f part{1,2}
