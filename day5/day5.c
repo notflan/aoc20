@@ -3,13 +3,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define pure __attribute__((pure))
+#define pure_const __attribute__((const))
+
 #define _cold __attribute__((cold, noinline))
 #define noreturn __attribute__((noreturn)) void
 
 #ifdef DEBUG
 #define dlog(...) fprintf(stderr, "[debug]" __VA_ARGS__)
 #else
-inline static void do_nothing(int _n, ...) {}
+inline static __attribute__((cold)) void do_nothing(int _n, ...) {}
 #define dlog(...) do { if(0) { do_nothing(0 __VA_OPT__(,) __VA_ARGS__); } } while(0)
 #endif
 
@@ -47,7 +50,7 @@ inline static void seat_calc_id(seat_t* restrict s)
 }
 
 
-static int sbsearch(const char* direct, size_t len, int max)
+static pure_const int sbsearch(const char* direct, size_t len, int max)
 {
 	int min = 0;
 #define diff (1 + (max - min))
@@ -76,7 +79,7 @@ static int sbsearch(const char* direct, size_t len, int max)
 #undef diff
 }
 
-static seat_t pbsearch(const char* str)
+static pure_const seat_t pbsearch(const char* str)
 {
 	seat_t seat = {
 		.row = (int)sbsearch(str, 7, ROW_MAX-1),
@@ -87,7 +90,7 @@ static seat_t pbsearch(const char* str)
 }
 
 #ifdef PART2
-static int _seat_cmp(const void* ptr, const void* ptr2)
+static pure_const int _seat_cmp(const void* ptr, const void* ptr2)
 {
 	const seat_t *s1 = ptr;
 	const seat_t *s2 = ptr2;
