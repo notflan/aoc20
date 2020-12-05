@@ -119,8 +119,7 @@ int main()
 	{
 		seat_t prev = seats[i-1];
 		seat_t this = seats[i];
-#define diff (this.id - prev.id)
-		if(diff == 2)
+		if( (this.id - prev.id) == 2)
 		{
 			printf("%d\n", prev.id+1);
 			return 0;
