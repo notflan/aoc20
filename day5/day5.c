@@ -50,7 +50,7 @@ inline static void seat_calc_id(seat_t* restrict s)
 }
 
 
-static pure_const int sbsearch(const char* direct, size_t len, int max)
+static pure int sbsearch(const char* direct, size_t len, int max)
 {
 	int min = 0;
 #define diff (1 + (max - min))
@@ -79,7 +79,7 @@ static pure_const int sbsearch(const char* direct, size_t len, int max)
 #undef diff
 }
 
-static pure_const seat_t pbsearch(const char* str)
+static pure seat_t pbsearch(const char* str)
 {
 	seat_t seat = {
 		.row = (int)sbsearch(str, 7, ROW_MAX-1),
@@ -90,7 +90,7 @@ static pure_const seat_t pbsearch(const char* str)
 }
 
 #ifdef PART2
-static pure_const int _seat_cmp(const void* ptr, const void* ptr2)
+static pure int _seat_cmp(const void* ptr, const void* ptr2)
 {
 	const seat_t *s1 = ptr;
 	const seat_t *s2 = ptr2;
