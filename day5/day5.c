@@ -12,7 +12,7 @@
 #ifdef DEBUG
 #define dlog(...) fprintf(stderr, "[debug]" __VA_ARGS__)
 #else
-inline static __attribute__((cold)) void do_nothing(int _n, ...) {}
+inline extern void do_nothing(int _n, ...) {}
 #define dlog(...) do { if(0) { do_nothing(0 __VA_OPT__(,) __VA_ARGS__); } } while(0)
 #endif
 
