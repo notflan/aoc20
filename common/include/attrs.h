@@ -5,6 +5,7 @@
 #define noglobal __attribute__((const))
 #define noinline __attribute__((noinline))
 #define cold __attribute__((cold))
+#define fall __attribute__((fallthrough))
 
 #ifndef DEBUG
 #define _force_inline __attribute__((gnu_inline)) inline extern

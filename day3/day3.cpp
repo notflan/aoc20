@@ -4,6 +4,8 @@
 #include <string>
 #include <tuple>
 
+#include <attrs.h>
+
 using mod_table = std::vector<std::vector<bool> >;
 
 mod_table read_input(const char* _input)
@@ -25,7 +27,7 @@ mod_table read_input(const char* _input)
 		{
 			switch(chr)
 			{
-			case '#': ln[i] = true;
+			case '#': ln[i] = true; fall;
 			default:  i++; break;
 			}
 		}

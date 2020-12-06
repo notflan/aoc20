@@ -7,13 +7,17 @@ C_OPT_FLAGS?=
 CXX_OPT_FLAGS?= -felide-constructors
 LD_OPT_FLAGS?=-O3 -flto
 
+INCLUDE=../common/include
+
 COMMON_FLAGS=-Wall -pedantic $(COMMON_OPT_FLAGS)
 
 CFLAGS?=$(COMMMON_FLAGS) --std=gnu11 $(C_OPT_FLAGS)
 CXXFLAGS?=$(COMMON_FLAGS) --std=gnu++20 $(CXX_OPT_FLAGS)
 LDFLAGS?=$(LD_OPT_FLAGS)
 
-CXXFLAGS+= -fno-exceptions
+
+CXXFLAGS+= -fno-exceptions -I$(INCLUDE)
+CFLAGS+= -I$(INCLUDE)
 
 .PHONY: all
 all: part1 part2
