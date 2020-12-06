@@ -7,10 +7,12 @@ OPT_FLAGS?= -O3 -march=native -pipe -flto \
 CFLAGS?=$(OPT_FLAGS)
 LDFLAGS?=-O3 -flto
 
-CFLAGS+= -Wall -pedantic --std=gnu11 
+INCLUDE?=../common/include
+
+CFLAGS+= -Wall -Wextra -Wstrict-aliasing -pedantic --std=gnu11 -I$(INCLUDE)
 
 .PHONY: all
-all: part1 
+all: part1 part2 
 
 inpu%.h: inpu%
 	@rm -f $@

@@ -8,6 +8,9 @@
 #define DEBUG
 #endif
 
+#include <attrs.h>
+#include <panic.h>
+
 static const char* const answers[] = {
 #ifdef TEST
 #include "input-test.h"
@@ -31,12 +34,11 @@ typedef struct answer
 	 table[NUM_QUESTIONS];
 } answers_t;
 
-inline static char assert_in_bound(char i)
+noglobal inline static char assert_in_bound(char i)
 {
 	register int x=(int)i;
 	if(x<0 || x>=NUM_QUESTIONS) {
-		fprintf(stderr, "Fatal error: char '%c' (%d) is not in range 0..%d\n", i, x, NUM_QUESTIONS);
-		abort();
+		panic("char '%c' (%d) is not in range 0..%d", i, x, NUM_QUESTIONS);
 	}
 	return i;
 }
@@ -53,7 +55,7 @@ static void populate(const char* from, answers_t * restrict ans) //wtf is this s
 								1;
 }
 
-static size_t count_ans(const answers_t* restrict ans) 
+pure static size_t count_ans(const answers_t* restrict ans) 
 {
 	register size_t j=0;
 	for(register size_t i=0;i<NUM_QUESTIONS;i++)

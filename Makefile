@@ -7,6 +7,8 @@ C_OPT_FLAGS?=
 CXX_OPT_FLAGS?= -felide-constructors
 LD_OPT_FLAGS?=-O3 -flto
 
+INCLUDE=$(shell pwd)/common/include
+
 COMMON_FLAGS=-Wall -pedantic $(COMMON_OPT_FLAGS)
 
 CFLAGS+=$(COMMON_FLAGS) --std=gnu11 $(C_OPT_FLAGS)
@@ -15,7 +17,7 @@ LDFLAGS+=$(LD_OPT_FLAGS)
 
 DAYS= $(wildcard day*)
 
-ENV= CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)"
+ENV= CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" INCLUDE="$(INCLUDE)"
 
 .PHONY: all
 
