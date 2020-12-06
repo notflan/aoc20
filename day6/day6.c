@@ -20,6 +20,10 @@ static const char* const answers[] = {
 
 #define NUM_QUESTIONS 26
 
+typedef struct answer {
+	bool table[NUM_QUESTIONS];
+} answers_t;
+
 inline static char assert_in_bound(char i)
 {
 	register int x=(int)i;
@@ -30,37 +34,37 @@ inline static char assert_in_bound(char i)
 	return i;
 }
 
-static void populate(const char* from, bool answered [restrict NUM_QUESTIONS]) //wtf is this syntax? `bool* restrict a` -> `bool a[restrict N]`????
+static void populate(const char* from, answers_t * restrict ans) //wtf is this syntax? `bool* restrict a` -> `bool a[restrict N]`????
 {
 	while(*from)
-		answered[(int)assert_in_bound((*from++)-'a')] = true;
+		ans->table[(int)assert_in_bound((*from++)-'a')] = true;
 }
 
-static size_t count_ans(const bool answered[restrict NUM_QUESTIONS]) 
+static size_t count_ans(const answers_t* restrict ans) 
 {
 	register size_t j=0;
 	for(register size_t i=0;i<NUM_QUESTIONS;i++)
-		j+= answered[i] ? 1 : 0;
+		j+= ans->table[i] ? 1 : 0;
 	return j;
 }
 
-inline static size_t reset(bool* restrict pop, bool answered[restrict NUM_QUESTIONS], size_t* restrict group_count)
+inline static size_t reset(bool* restrict pop, answers_t * restrict ans, size_t* restrict group_count)
 {
 	register size_t fullcnt=0;
-	if(pop) {
-		fullcnt = (*group_count = count_ans(answered));
+	if(*pop) {
+		fullcnt = (*group_count = count_ans(ans));
 #ifdef DEBUG
 		fprintf(stderr, "Last group: %lu (fcnt %lu)\n" , *group_count, fullcnt);
 #endif
 	}
-	pop = false;
-	memset(answered,0, NUM_QUESTIONS);
+	*pop = false;
+	memset(ans,0, sizeof(answers_t));
 	return fullcnt;
 }
 
 int main()
 {
-	bool answered[NUM_QUESTIONS] = {false};
+	answers_t answered = {0};
 	size_t group_counts[answers_sz+1] = {0};
 	size_t fullcnt=0;
 	bool pop=false;
@@ -69,14 +73,14 @@ int main()
 	{
 		const char* current = answers[i];
 		if(*current) {
-			populate(current, answered);
+			populate(current, &answered);
 			pop=true;
 		} else {
-			fullcnt += reset(&pop, answered, &group_counts[j++]);
+			fullcnt += reset(&pop, &answered, &group_counts[j++]);
 		}
 
 	}
-	fullcnt+= reset(&pop, answered, group_counts +answers_sz);
+	fullcnt+= reset(&pop, &answered, group_counts +answers_sz);
 	printf("%lu\n", fullcnt);
 
 	return 0;
