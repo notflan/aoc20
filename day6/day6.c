@@ -20,8 +20,15 @@ static const char* const answers[] = {
 
 #define NUM_QUESTIONS 26
 
-typedef struct answer {
-	bool table[NUM_QUESTIONS];
+typedef struct answer 
+{
+#ifdef PART2
+	int n_in_group;
+	int
+#else
+	bool
+#endif
+	 table[NUM_QUESTIONS];
 } answers_t;
 
 inline static char assert_in_bound(char i)
@@ -37,14 +44,24 @@ inline static char assert_in_bound(char i)
 static void populate(const char* from, answers_t * restrict ans) //wtf is this syntax? `bool* restrict a` -> `bool a[restrict N]`????
 {
 	while(*from)
-		ans->table[(int)assert_in_bound((*from++)-'a')] = true;
+		ans->table[(int)assert_in_bound((*from++)-'a')] 
+#ifdef PART2
+								+=
+#else
+								= 
+#endif
+								1;
 }
 
 static size_t count_ans(const answers_t* restrict ans) 
 {
 	register size_t j=0;
 	for(register size_t i=0;i<NUM_QUESTIONS;i++)
+#ifdef PART2
+		j+= ans->table[i] == ans->n_in_group ? 1 : 0;
+#else
 		j+= ans->table[i] ? 1 : 0;
+#endif
 	return j;
 }
 
@@ -74,6 +91,9 @@ int main()
 		const char* current = answers[i];
 		if(*current) {
 			populate(current, &answered);
+#ifdef PART2
+			answered.n_in_group += 1;
+#endif
 			pop=true;
 		} else {
 			fullcnt += reset(&pop, &answered, &group_counts[j++]);

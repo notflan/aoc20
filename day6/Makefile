@@ -24,6 +24,11 @@ part1: day6.c | input.h
 part1-test: day6.c | input-test.h
 	$(CC) $< -DTEST $(CFLAGS) -o $@ $(LDFLAGS)
 	
+part2: day6.c | input.h
+	$(CC) $< -DPART2 $(CFLAGS) -o $@ $(LDFLAGS)
+
+part2-test: day6.c | input-test.h
+	$(CC) $< -DTEST -DPART2 $(CFLAGS) -o $@ $(LDFLAGS)
 clean:
 	rm -f part{1,2}{,-test}
 	rm -f input.h
