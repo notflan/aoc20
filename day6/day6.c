@@ -43,7 +43,7 @@ noglobal inline static char assert_in_bound(char i)
 	return i;
 }
 
-static void populate(const char* from, answers_t * restrict ans) //wtf is this syntax? `bool* restrict a` -> `bool a[restrict N]`????
+static void populate(const char* from, answers_t * restrict ans) 
 {
 	while(*from)
 		ans->table[(int)assert_in_bound((*from++)-'a')] 
