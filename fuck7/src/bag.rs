@@ -20,6 +20,12 @@ impl Borrow<String> for Rule
 	&self.bag
     }
 }
+impl Borrow<str> for Rule
+{
+    fn borrow(&self) -> &str {
+	self.name()
+    }
+}
 
 impl Hash for Rule {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -37,7 +43,7 @@ impl Rule
     /// Find the rules for each inner bag within this context
     pub fn inner_rules<'a>(&'a self, hashes: &'a Bags) -> impl Iterator<Item = &'a Rule> + 'a
     {
-	self.contains.iter().filter_map(move |(_, re)| hashes.get(re))
+	self.contains.iter().filter_map(move |(n, re)| Some(std::iter::repeat(hashes.get(re)?).take(*n))).flatten()
     }
     #[inline] pub fn new(bag: impl Into<String>, contains: impl IntoIterator<Item = (usize, String)>) -> Self
     {
@@ -59,11 +65,26 @@ impl Rule
     }
 }
 
+#[derive(Debug)]
 pub struct RuleIterator<'a>
 {
     base: std::slice::Iter<'a, (usize, BagRef)>,
     hashes: &'a Bags,
     held: Vec<&'a Rule>,
+}
+
+impl<'a> RuleIterator<'a>
+{
+    pub fn search(self, s: impl AsRef<str>) -> Option<&'a Rule>
+    {
+	let s=  s.as_ref();
+	for rule in self {
+	    if rule.name() == s {
+		return Some(rule);
+	    }
+	}
+	None
+    }
 }
 
 impl<'a> Iterator for RuleIterator<'a>
@@ -73,8 +94,11 @@ impl<'a> Iterator for RuleIterator<'a>
     {
 	if self.held.is_empty() {
 	    match self.base.next() {
-		Some((_, re)) => {
-		    self.held.push(self.hashes.get(re).unwrap());
+		Some((n, re)) => {
+		    let ins = self.hashes.get(re).unwrap();
+		    for _ in 0..*n {
+			self.held.push(ins);
+		    }
 		},
 		None => return None,
 	    }
