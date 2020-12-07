@@ -1,103 +1,91 @@
 use std::{
-    mem,
-    ops,
     hash::{Hash, Hasher,},
-};
-use generational_arena::{
-    Arena,
-    Index,
+    collections::HashSet,
+    borrow::Borrow,
 };
 
-#[derive(Debug, Clone, Eq)]
-pub struct Bag
+type Bags = HashSet<Rule>;
+type BagRef = String;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Rule
 {
-    name: String,
-    contains: Vec<Index>,
+    bag: BagRef,
+    contains: Vec<(usize, BagRef)>,
 }
 
-impl Hash for Bag {
-    #[inline] fn hash<H: Hasher>(&self, state: &mut H) {
-	self.as_ref().hash(state)
-    }
-}
-
-impl<T> PartialEq<T> for Bag
-where T: AsRef<BagRef>
+impl Borrow<String> for Rule
 {
-    fn eq(&self, other: &T) -> bool
-    {
-	self.as_ref() == other.as_ref()
+    fn borrow(&self) -> &String {
+	&self.bag
     }
 }
 
-impl Bag
+impl Hash for Rule {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+	self.bag.hash(state)
+    }
+}
+
+impl Rule
 {
-    pub fn new(name: String) -> Self
+    #[inline] pub fn name(&self) -> &str
     {
-	Self {
-	    name,
-	    contains: Vec::new(),
-	}
-    }
-    pub fn push_contents(&mut self, idx: Index)
-    {
-	self.contains.push(idx)
-    }
-    pub fn bags_in<'a>(&'a self, w: &'a Arena<Bag>) -> impl Iterator<Item = &'a BagRef> + 'a
-    {
-	self.contains.iter().filter_map(move |x| w.get(x.clone())).map(Self::as_ref)
-    }
-    pub fn contains_in(&self, w: &Arena<Bag>,  bag: impl AsRef<BagRef>) -> bool
-    {
-	for x in self.bags_in(w)
-	{
-	    if x == bag.as_ref() {
-		return true;
-	    }
-	}
-	false
+	&self.bag[..]
     }
     
-}
-
-impl AsRef<BagRef> for Bag
-{
-    #[inline] fn as_ref(&self) -> &BagRef
+    /// Find the rules for each inner bag within this context
+    pub fn inner_rules<'a>(&'a self, hashes: &'a Bags) -> impl Iterator<Item = &'a Rule> + 'a
     {
-	BagRef::new_unchecked(&self.name[..])
+	self.contains.iter().filter_map(move |(_, re)| hashes.get(re))
     }
-}
-
-impl ops::Deref for Bag
-{
-    type Target = BagRef;
-    #[inline] fn deref(&self) -> &Self::Target {
-	self.as_ref()
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-#[repr(transparent)]
-pub struct BagRef
-{
-    name: str
-}
-
-impl AsRef<BagRef> for BagRef
-{
-    #[inline] fn as_ref(&self) -> &BagRef
+    #[inline] pub fn new(bag: impl Into<String>, contains: impl IntoIterator<Item = (usize, String)>) -> Self
     {
-	self
+	return Self::new_ex(bag.into(), contains.into_iter().collect());
     }
-}
-
-
-impl BagRef
-{
-    #[inline] fn new_unchecked<'a>(from: &'a str) -> &'a BagRef
+    pub fn new_ex(bag: String, contains: Vec<(usize, String)>) -> Self
     {
-	unsafe {
-	    mem::transmute(from)
+	Self {bag, contains}
+    }
+
+    pub fn all_rules<'a>(&'a self, hashes: &'a Bags) -> RuleIterator<'a>
+    {
+	RuleIterator
+	{
+	    base: self.contains.iter(),
+	    hashes,
+	    held: Vec::with_capacity(self.contains.len()),
 	}
     }
 }
+
+pub struct RuleIterator<'a>
+{
+    base: std::slice::Iter<'a, (usize, BagRef)>,
+    hashes: &'a Bags,
+    held: Vec<&'a Rule>,
+}
+
+impl<'a> Iterator for RuleIterator<'a>
+{
+    type Item = &'a Rule;
+    fn next(&mut self) -> Option<Self::Item>
+    {
+	if self.held.is_empty() {
+	    match self.base.next() {
+		Some((_, re)) => {
+		    self.held.push(self.hashes.get(re).unwrap());
+		},
+		None => return None,
+	    }
+	}
+	let ret = self.held.remove(0);
+	self.held.extend(ret.inner_rules(self.hashes));
+	Some(ret)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+	(self.base.len(), None)
+    }
+}
+impl<'a> std::iter::FusedIterator for RuleIterator<'a>{}

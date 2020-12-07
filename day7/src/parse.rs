@@ -1,109 +1,48 @@
-use std::{
-    io::{
-	self, BufRead,
-    },
-    sync::{
-	mpsc,
-    },
-    thread,
-    marker::*,
-    collections::{HashMap, HashSet,},
-};
-use generational_arena::{
-    Arena, Index,
-};
+use std::io::BufRead;
 use super::bag;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct Rule
+fn parse_rule(from: impl AsRef<str>) -> Option<bag::Rule>
 {
-    contents: Vec<(usize, String)>,
-}
-
-fn parse_rest(from: mpsc::Receiver<String>) -> HashMap<String, Rule>
-{
-    let mut out = HashMap::new();
-    while let Ok(line) = from.recv() {
-	
-    }
-    out
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct UnlinkedBag<'a>
-{
-    name: &'a str,
-    cont: Rule,
-}
-
-enum MaybeLinked<'a>
-{
-    Unlinked(UnlinkedBag<'a>),
-    Linked(bag::Bag),
-}
-
-pub fn parse<R: BufRead>(from: R) -> Result<Arena<bag::Bag>, io::Error>
-{
-    let mut all_possible = HashSet::<String>::new();
-    let (tx, rx) = mpsc::channel();
-    let w = thread::spawn(move || parse_rest(rx));
+    let from = from.as_ref();
+    let mut ps = from.split("bag");
     
-    macro_rules! unwrap {
-	(? $opt:expr) => {
-	    match $opt {
-		Some(v) => v,
-		_ => continue,
-	    }
-	};
-	($res:expr) => {
-	    unwrap!(? $res.ok())
-	}
-    }
-    for line in from.lines()
-    {
-	let mut line = line?;
-
-	let irest = {
-	    const SPLIT: &str = "bags contain";
-	    let bn = {
-		let idx = unwrap!(? line.find(SPLIT));
-		&line[..idx]
+    let name = ps.next()?.trim();
+    Some(bag::Rule::new(name, (0..).zip(ps).filter_map(|(i, s)| {
+	let (n, s) = if i == 0 {
+	    const JUNK: &str = "s contain ";
+	    
+	    let (spec, rest)  = (&s[JUNK.len()..]).split_once(char::is_whitespace).unwrap();
+	    let n: usize = match spec {
+		"no" => 0,
+		x => x.parse().unwrap(),
 	    };
-	    all_possible.insert(bn.trim().to_owned());
+	    (n, rest.trim())
+	} else {
+	    if s.contains(".") { return None; }
+	    
+	    let s = if s.starts_with("s") {
+		&s[3..]
+	    } else if s.starts_with(",") {
+		&s[2..]
+	    } else {
+		s
+	    }.trim();
+	    //if s.starts_with(".") { return None; }
+
+	    let (spec, rest)  = s.split_once(char::is_whitespace).unwrap();
+	    (spec.parse().unwrap(), rest.trim())
 	};
-	unwrap!(tx.send(line));
-    }
-    let (mut unlinked, nref) = {
-	let mut ulinks = w.join().unwrap();
-	let mut unlinked = Arena::with_capacity(all_possible.len());
-	let mut nref = HashMap::new();
-	for name in all_possible.iter()
-	{
-	    let urule = ulinks.remove(name).unwrap();
-	    let idx = unlinked.insert(MaybeLinked::Unlinked(UnlinkedBag{name, cont: urule}));
-	    nref.insert(name, idx);
+	if n < 1 {
+	    None
+	} else {
+	    Some((n, s.to_owned()))
 	}
-	(unlinked, nref)
-    };
+    })))
+}
 
-    let indecies: Vec<_> = unlinked.iter().map(|(i, _)| i).collect();
-    for idx in indecies.into_iter()
-    {
-	let current = unlinked.get_mut(idx).unwrap();
-	let linked = match current {
-	    MaybeLinked::Unlinked(UnlinkedBag{name, cont: rule}) => {
-		let mut linking = bag::Bag::new(name.to_owned());
-		for (_, cont) in rule.contents.iter() {
-		    linking.push_contents(*nref.get(cont).unwrap());
-		}
-		linking
-	    },
-	    _=> continue,
-	};
-	*current = MaybeLinked::Linked(linked);
-    }
-
-    //TODO: how tf can we convert from Arena<MaybeLinked<_>> into Arena<_>?????
-    
-    todo!()
+pub fn parse<R: BufRead>(buf: R) -> impl Iterator<Item = bag::Rule>
+{
+    buf.lines().filter_map(|x| {
+	x.ok().map(parse_rule).flatten()
+    })
 }
