@@ -11,13 +11,14 @@ INCLUDE=$(shell pwd)/common/include
 
 COMMON_FLAGS=-pipe -O3 -Wall -Wextra -Wstrict-aliasing -pedantic $(COMMON_OPT_FLAGS)
 
+RUSTFLAGS+=-C target-cpu=native
 CFLAGS+=$(COMMON_FLAGS) --std=gnu11 $(C_OPT_FLAGS)
 CXXFLAGS+=$(COMMON_FLAGS) --std=gnu++20 $(CXX_OPT_FLAGS)
 LDFLAGS+=$(LD_OPT_FLAGS)
 
 DAYS= $(wildcard day*)
 
-ENV= CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" INCLUDE="$(INCLUDE)"
+ENV= CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" INCLUDE="$(INCLUDE)" RUSTFLAGS="$(RUSTFLAGS)"
 
 .PHONY: all
 

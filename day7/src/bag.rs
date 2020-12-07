@@ -35,6 +35,10 @@ impl Hash for Rule {
 
 impl Rule
 {
+    pub fn children(&self) -> &[(usize, BagRef)]
+    {
+	self.contains.as_slice()
+    }
     #[inline] pub fn name(&self) -> &str
     {
 	&self.bag[..]
@@ -43,7 +47,7 @@ impl Rule
     /// Find the rules for each inner bag within this context
     pub fn inner_rules<'a>(&'a self, hashes: &'a Bags) -> impl Iterator<Item = &'a Rule> + 'a
     {
-	self.contains.iter().filter_map(move |(n, re)| Some(std::iter::repeat(hashes.get(re)?).take(*n))).flatten()
+	self.contains.iter().filter_map(move |(_, re)| hashes.get(re))
     }
     #[inline] pub fn new(bag: impl Into<String>, contains: impl IntoIterator<Item = (usize, String)>) -> Self
     {
