@@ -1,5 +1,5 @@
 COMMON_OPT_FLAGS?= -DFROM_MAIN -march=native -flto \
-	 -march=native -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4 \
+	 -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4 \
 	 -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block \
 	 -fno-stack-check -fno-strict-aliasing 
 

@@ -1,7 +1,7 @@
 SRC:= day9.c map.c
 
 OPT_FLAGS?= -march=native -flto \
-	 -march=native -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4 \
+	 -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4 \
 	 -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block \
 	 -fno-stack-check -fno-strict-aliasing 
 
@@ -11,7 +11,7 @@ C_OPT_FLAGS=$(OPT_FLAGS)
 CXX_OPT_FLAGS=$(OPT_FLAGS) -felide-constructors -fno-exceptions
 LD_OPT_FLAGS?=-O3 -flto
 
-INCLUDE=../common/include
+INCLUDE?=../common/include
 
 CFLAGS?=$(COMMON_FLAGS) $(C_OPT_FLAGS) --std=gnu11
 CXXFLAGS?=$(COMMON_FLAGS) $(CXX_OPT_FLAGS) --std=gnu++20
