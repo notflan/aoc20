@@ -4,3 +4,6 @@ part2*
 
 *.lock
 target/
+
+*.o
+*.gcda

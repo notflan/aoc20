@@ -24,8 +24,6 @@ const u64 input[] = {
 #endif
 };
 
-#define box(t) (calloc(sizeof(t), 1))
-
 struct pair {
 	bool valid;
 	u64 num;

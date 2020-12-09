@@ -3,8 +3,27 @@
 #include <string.h>
 
 #include "map.h"
-
+/*
+static inline void* align_ptr(void* ptr, size_t al)
+{
+	unsigned char* buffer = ptr;
+	return buffer + al - ((intptr_t)buffer) % al;
+}
+*/
+#ifdef _EXPR_EXT			
+#define box(t) ({ t* restrict p = aligned_alloc(_Alignof(t), sizeof(t)); \
+			*p = (t){0}; \
+		p; })
+#elif !defined(IGNORE_ALIGMENT)
+inline extern void* _zero_ptr(void* ptr, size_t n)
+{
+	memset(ptr, 0, n);
+	return ptr;
+}
+#define box(t) _zero_ptr(aligned_alloc(_Alignof(t), sizeof(t)), sizeof(t))
+#else
 #define box(t) calloc(sizeof(t), 1)
+#endif
 
 struct page {
 	struct entry {

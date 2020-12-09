@@ -5,7 +5,7 @@ OPT_FLAGS?= -march=native -flto \
 	 -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block \
 	 -fno-stack-check -fno-strict-aliasing 
 
-COMMON_FLAGS?=-pipe -O3 -Wall -pedantic -Wextra -Wstrict-aliasing
+COMMON_FLAGS?=-pipe -O3 -Wall -pedantic -Wextra -Wstrict-aliasing -Wcast-align
 
 C_OPT_FLAGS=$(OPT_FLAGS)
 CXX_OPT_FLAGS=$(OPT_FLAGS) -felide-constructors -fno-exceptions
@@ -19,8 +19,18 @@ LDFLAGS?=$(LD_OPT_FLAGS)
 
 CFLAGS+=-I$(INCLUDE)
 
+STRIP=strip
+
+# Number of iterations to profile program
+PROF_ITERATIONS?=40
+# Set concurrent profiling runs to be number of *physical* cpu cores
+PROF_CONCURRENT?=$(shell grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}') 
+
 .PHONY: all
 all: part1 part2
+
+.PHONY: test
+test: part1-test part2-test
 
 inpu%.h: inpu%
 	@rm -f $@
@@ -30,16 +40,32 @@ inpu%.h: inpu%
 	
 part1: $(SRC) | input.h
 	$(CC) $(SRC) $(CFLAGS) -o $@ $(LDFLAGS)
-	strip $@
+	$(STRIP) $@
 
 part2: $(SRC) | input.h
-	$(CC) $(SRC) -DPART2 $(CFLAGS) -o $@ $(LDFLAGS)
-	strip $@
+	rm -f *.gcda
+	$(CC) $(SRC) -DPART2 $(CFLAGS) -fprofile-generate -o $@ $(LDFLAGS)
+	for i in {0..$(PROF_ITERATIONS)}; do \
+		printf "\rIteration $$i / $(PROF_ITERATIONS)"; \
+		for j in {0..$(PROF_CONCURRENT)}; do \
+			./$@ >> /dev/null 2>&1 & \
+		done; \
+		wait; \
+	done
+	@echo " DONE"
+	rm $@
+	$(CC) $(SRC) -DPART2 $(CFLAGS) -fprofile-use -fprofile-correction -o $@ -lgcov $(LDFLAGS) -fprofile-use -fprofile-correction
+	$(STRIP) $@
 
 part1-test: $(SRC) | input-test.h
 	$(CC) $(SRC) -DTEST $(CFLAGS) -o $@ $(LDFLAGS)
-	strip $@
+	$(STRIP) $@
+
+part2-test: $(SRC) | input-test.h
+	$(CC) $(SRC) -DTEST -DPART2 $(CFLAGS) -o $@ $(LDFLAGS)
+	$(STRIP) $@
 
 clean:
 	rm -f part{1,2}{,-test}
 	rm -f input{,-test}.h
+	rm -f *.gcda
