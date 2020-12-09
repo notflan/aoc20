@@ -45,9 +45,58 @@ static void calculate_deficits(const u64 pre[static PREAMBLE], map_t * restrict 
 }
 
 #ifdef PART2
+static u64 csum(size_t i, size_t j)
+{
+	register u64 sum=0;
+	for(;i<=j;i++)
+		sum += input[i];
+	return sum;
+}
+static void reduce_bound(size_t* restrict i, size_t* restrict j, bool ex_by_high)
+{
+	register u64 ibound = 0; int iset=0;
+	register u64 jbound = 0; int jset=0;
+
+	if(*i<input_sz)	(iset = 1, ibound = input[*i+1]);
+	if(*j!=0)	(jset = -1, jbound = input[*j-1]);
+
+	if(ex_by_high)
+		*(ibound>jbound ? i : j) += (ibound>jbound ? iset : jset);
+	else
+		*(ibound<jbound ? i : j) += (ibound<jbound ? iset: jset);
+}
+static void extend_bound(size_t* restrict i, size_t* restrict j, bool ex_by_high)
+{
+	register u64 ibound = 0; int iset=0;
+	register u64 jbound = 0; int jset=0;
+
+	if(*i!=0)	(iset = -1, ibound = input[*i-1]);
+	if(*j<input_sz)	(jset = 1, jbound = input[*j+1]);
+
+	if(ex_by_high)
+		*(ibound>jbound ? i : j) += (ibound>jbound ? iset : jset);
+	else
+		*(ibound<jbound ? i : j) += (ibound<jbound ? iset: jset);
+}
 static u64 find_set(u64 target)
 {
-	
+	size_t i=0,j=0;
+	while(1)
+	{
+		u64 sum = csum(i,j);
+
+		if(sum == target) {
+			printf("%lu\n", input[i] + input[j]);
+			return 0;
+		}
+		else if(sum < target) {
+			extend_bound(&i, &j, true);
+		} else if(sum > target) {
+			reduce_bound(&i, &j, true);
+		}
+	}
+	fprintf(stderr, "No set found\n");
+	return 1;
 }
 #endif
 

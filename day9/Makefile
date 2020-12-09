@@ -32,6 +32,10 @@ part1: $(SRC) | input.h
 	$(CC) $(SRC) $(CFLAGS) -o $@ $(LDFLAGS)
 	strip $@
 
+part2: $(SRC) | input.h
+	$(CC) $(SRC) -DPART2 $(CFLAGS) -o $@ $(LDFLAGS)
+	strip $@
+
 part1-test: $(SRC) | input-test.h
 	$(CC) $(SRC) -DTEST $(CFLAGS) -o $@ $(LDFLAGS)
 	strip $@
