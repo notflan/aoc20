@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "map.h"
 
@@ -52,47 +53,38 @@ static u64 csum(size_t i, size_t j)
 		sum += input[i];
 	return sum;
 }
-static void reduce_bound(size_t* restrict i, size_t* restrict j, bool ex_by_high)
+static int _comp_u64(const void* _i, const void* _j)
 {
-	register u64 ibound = 0; int iset=0;
-	register u64 jbound = 0; int jset=0;
+	const u64* i = _i;
+	const u64* j = _j;
 
-	if(*i<input_sz)	(iset = 1, ibound = input[*i+1]);
-	if(*j!=0)	(jset = -1, jbound = input[*j-1]);
-
-	if(ex_by_high)
-		*(ibound>jbound ? i : j) += (ibound>jbound ? iset : jset);
-	else
-		*(ibound<jbound ? i : j) += (ibound<jbound ? iset: jset);
+	return    *i < *j ? -1
+		: *i > *j ? 1 
+		: 0;
 }
-static void extend_bound(size_t* restrict i, size_t* restrict j, bool ex_by_high)
+inline static u64 ud_sort(size_t i, size_t j)
 {
-	register u64 ibound = 0; int iset=0;
-	register u64 jbound = 0; int jset=0;
+	u64 slice[input_sz];
+	size_t len = j-i;
+	assert(len<input_sz);
 
-	if(*i!=0)	(iset = -1, ibound = input[*i-1]);
-	if(*j<input_sz)	(jset = 1, jbound = input[*j+1]);
+	memcpy(slice, input+i, sizeof(u64)* len);
+	
+	qsort(slice, len, sizeof(u64), &_comp_u64);
 
-	if(ex_by_high)
-		*(ibound>jbound ? i : j) += (ibound>jbound ? iset : jset);
-	else
-		*(ibound<jbound ? i : j) += (ibound<jbound ? iset: jset);
+	return slice[0] + slice[len-1];
 }
 static u64 find_set(u64 target)
 {
-	size_t i=0,j=0;
-	while(1)
+	for(register size_t i =0;i<input_sz;i++)
 	{
-		u64 sum = csum(i,j);
-
-		if(sum == target) {
-			printf("%lu\n", input[i] + input[j]);
-			return 0;
-		}
-		else if(sum < target) {
-			extend_bound(&i, &j, true);
-		} else if(sum > target) {
-			reduce_bound(&i, &j, true);
+		for(register size_t j=i;j<input_sz;j++)
+		{
+			u64 sum = csum(i, j);
+			if(sum == target) {
+				printf("%lu\n", ud_sort(i, j));
+				return 0;
+			} else if (sum > target) break;
 		}
 	}
 	fprintf(stderr, "No set found\n");
