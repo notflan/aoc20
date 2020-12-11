@@ -7,3 +7,6 @@ target/
 
 *.o
 *.gcda
+
+# Specific days
+!day10/src/input.rs
