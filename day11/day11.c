@@ -55,15 +55,20 @@ pure gol_t generate_arena()
 	return gol;
 }
 
+noglobal static inline int gol_in_bounds(int x, int y)
+{
+	return !(x<0 || x >= (int)INPUT_WIDTH || y<0 || y >= (int)INPUT_HEIGHT);
+}
+
 static inline pure enum gol_state gol_index(const gol_t* gol, int x, int y)
 {
-	if (x<0 || x >= (int)INPUT_WIDTH || y<0 || y >= (int)INPUT_HEIGHT) return STATE_FLOOR;
+	if (!gol_in_bounds(x,y)) return STATE_FLOOR;
 	return gol->arena[GOL_INDEX(x,y)];
 }
 
 static inline void gol_set(gol_t* restrict gol, int x,int y, enum gol_state st)
 {
-	if (x<0 || x >= (int)INPUT_WIDTH || y<0 || y >= (int)INPUT_HEIGHT) return;
+	if (!gol_in_bounds(x,y)) return;
 
 	gol->arena[GOL_INDEX(x,y)] = st;
 }
@@ -81,19 +86,92 @@ static inline int gol_count(const gol_t* gol, enum gol_state s)
 	return count_states(gol->arena, s, INPUT_WIDTH*INPUT_HEIGHT);
 }
 
-static inline void neighbours(const gol_t* gol, int x, int y, enum gol_state out[restrict 8])
+static inline int nneighbours(const gol_t* gol, int n, int x, int y, enum gol_state out[restrict 8])
 {
-	out[0] = gol_index(gol, x-1, y-1);
-	out[1] = gol_index(gol, x, y-1);
-	out[2] = gol_index(gol, x+1, y-1);
+	out[0] = gol_index(gol, x-n, y-n);
+	out[1] = gol_index(gol, x, y-n);
+	out[2] = gol_index(gol, x+n, y-n);
 
-	out[3] = gol_index(gol, x-1, y);
+	out[3] = gol_index(gol, x-n, y);
 	//out[4] = gol_index(gol, x, y);
-	out[4] = gol_index(gol, x+1, y);
+	out[4] = gol_index(gol, x+n, y);
 
-	out[5] = gol_index(gol, x-1, y+1);
-	out[6] = gol_index(gol, x, y+1);
-	out[7] = gol_index(gol, x+1, y+1);
+	out[5] = gol_index(gol, x-n, y+n);
+	out[6] = gol_index(gol, x, y+n);
+	out[7] = gol_index(gol, x+n, y+n);
+
+	return gol_in_bounds(x-n, y-n) ||
+		gol_in_bounds(x+n, y-n) ||
+		gol_in_bounds(x-n, y+n) ||
+		gol_in_bounds(x+n, y+n);
+}
+inline static int neighbours(const gol_t* gol, int x, int y, enum gol_state out[restrict 8])
+{
+	return nneighbours(gol, 1, x, y, out);
+}
+
+#define CEAR_WITH(clr, num, with) do { for(size_t __i=0;__i<num;__i++) clr[__i] = with; } while(0)
+
+static inline void neighbours_far(const gol_t* gol, int x, int y, enum gol_state out[restrict 8])
+{
+	struct {
+		int set;
+		int x, y;
+	} nco[8] = {0};
+
+	int i=1;
+	for(;;i++) {
+#define X(mx, my, j) if (gol_index(gol, x + (mx), y + (my)) != STATE_FLOOR && !nco[j].set) { nco[j].set = 1; nco[j].x = x + (mx); nco[j].y = y + (my); } (void)0
+
+		X( -i, -i, 0 );
+		X(  0, -i, 1 );
+		X( +i, -i, 2 );
+
+		X( -i, 0,  3);
+		X( +i, 0,  4);
+
+		X( -i, +i, 5);
+		X(  0, +i, 6);
+		X( +i, +i, 7);
+
+		if(! (gol_in_bounds(x-i, y-i) ||
+			gol_in_bounds(x+i, y-i) ||
+			gol_in_bounds(x-i, y+i) ||
+			gol_in_bounds(x+i, y+i)) ) break;
+
+
+		int red=1;
+		for(int i=0;i<8;i++)
+			red &= nco[i].set;
+		if(red) break;
+#undef X
+	}
+
+#define X(n) out[n] = nco[n].set ? gol_index(gol, nco[n].x, nco[n].y) : out[n]
+	X(0);
+	X(1);
+	X(2);
+	X(3);
+	X(4);
+	X(5);
+	X(6);
+	X(7);
+#undef X
+/*	enum gol_state tmp[8];
+	neighbours(gol, x, y, tmp);
+	int ndone[8] = {0};
+	int rdone=0;
+	for(register size_t i=1;rdone<8;i++) {
+		if(!nneighbours(gol, i, x, y, tmp)) break;
+		for(size_t j=0;j<8;j++) {
+			if(!ndone[j] && tmp[j] != STATE_FLOOR) {
+				out[j] = tmp[j];
+				ndone[j] = 1;
+				rdone+=1;
+				break;
+			}
+		}
+	}*/
 }
 
 static void simulate_ip(const gol_t* source, gol_t* restrict dest)
@@ -101,14 +179,23 @@ static void simulate_ip(const gol_t* source, gol_t* restrict dest)
 	for(size_t h=0;h<INPUT_HEIGHT;h++)
 		for(size_t w=0;w<INPUT_WIDTH;w++) {
 			enum gol_state next = gol_index(source, w, h);
-			enum gol_state n[8];
+			enum gol_state n[8]={0};
+#ifdef PART2
+			neighbours_far(source, w, h, n);
+#else
 			neighbours(source, w, h, n);
+#endif
 			switch(next) {
 			case STATE_EMPTY:
 				if(count_states(n, STATE_OCCU, 8)==0) next = STATE_OCCU;
 				break;
 			case STATE_OCCU:
-				if(count_states(n, STATE_OCCU, 8)>=4) next = STATE_EMPTY;
+#ifdef PART2
+				if(count_states(n, STATE_OCCU, 8)>=5)
+#else
+				if(count_states(n, STATE_OCCU, 8)>=4)
+#endif
+					 next = STATE_EMPTY;
 			default: break;
 			}
 			gol_set(dest, w, h, next);
@@ -149,7 +236,7 @@ int main()
 	gol_t tmp;
 	while(1)
 	{
-#ifndef _COPY_ALLOC_ARENA
+#if !defined(_COPY_ALLOC_ARENA)
 		simulate_ip(arena, &tmp);
 #else
 		tmp = simulate_once(arena);

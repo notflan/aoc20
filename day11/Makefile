@@ -17,6 +17,9 @@ STRIP=strip
 .PHONY: all
 all: part1 part2
 
+.PHONY: test
+test: part1-test part2-test
+
 inpu%-sz.h: inpu%
 	echo "#define input_sz (`head -n 1 $< | wc -m`)" > $@
 
@@ -33,7 +36,13 @@ part1: day11.c | input.h
 
 part1-test: day11.c | input-test.h
 	$(CC) $< -DTEST $(CFLAGS) -o $@ $(LDFLAGS)
+
+part2: day11.c | input.h
+	$(CC) $< -DPART2 $(CFLAGS) -o $@ $(LDFLAGS)
 	$(STRIP) $@
+
+part2-test: day11.c | input-test.h
+	$(CC) $< -DTEST -DPART2 $(CFLAGS) -o $@ $(LDFLAGS)
 clean:
 	rm -f input{,-sz}{,-test}.h
 	rm -f part{1,2}{,-test}
