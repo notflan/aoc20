@@ -120,11 +120,10 @@ static inline int gol_eq(const gol_t* g1, const gol_t* g2)
 	return memcmp(g1->arena, g2->arena, sizeof(g1->arena))==0;
 }
 
-gol_t simulate_once(const gol_t* source)
+static inline gol_t simulate_once(const gol_t* from)
 {
-	gol_t out = *source;
-	simulate_ip(source, &out);
-	
+	gol_t out;
+	simulate_ip(from, &out);
 	return out;
 }
 
@@ -150,7 +149,11 @@ int main()
 	gol_t tmp;
 	while(1)
 	{
+#ifndef _COPY_ALLOC_ARENA
+		simulate_ip(arena, &tmp);
+#else
 		tmp = simulate_once(arena);
+#endif
 #ifdef DEBUG
 		printf("Next: \n");
 		print_arena(&tmp);
