@@ -20,7 +20,7 @@ all: part1 part2
 inpu%-sz.h: inpu%
 	echo "#define input_sz (`head -n 1 $< | wc -m`)" > $@
 
-inpu%.h: inpu% | input-sz.h
+inpu%.h: inpu% | inpu%-sz.h
 	@rm -f $@
 	while read line; do \
 		echo "\"$$line\"," >> $@; \
@@ -31,6 +31,9 @@ part1: day11.c | input.h
 	$(CC) $< $(CFLAGS) -o $@ $(LDFLAGS)
 	$(STRIP) $@
 
+part1-test: day11.c | input-test.h
+	$(CC) $< -DTEST $(CFLAGS) -o $@ $(LDFLAGS)
+	$(STRIP) $@
 clean:
-	rm -f input{,-sz}.h
-	rm -f part{1,2}
+	rm -f input{,-sz}{,-test}.h
+	rm -f part{1,2}{,-test}
