@@ -10,54 +10,17 @@ use std::{
     num::NonZeroU8,
     ops,
     iter,
+    iter::Sum,
 };
 use smallmap::Map;
+
 mod input;
+mod diff;
+use diff::Diffs;
 
 const INPUT: &str = "input";
 
 type Adaptors = Map<NonZeroU8, ()>;
-
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-struct Diffs([usize; 3]);
-
-impl ops::Add for Diffs
-{
-    type Output = Self;
-    fn add(self, other: Self) -> Self::Output{
-	Self([
-	    self.0[0] + other.0[0],
-	    self.0[1] + other.0[1],
-	    self.0[2] + other.0[2],
-	])
-    }
-}
-
-impl ops::AddAssign for Diffs
-{
-    fn add_assign(&mut self, rhs: Self) {
-	self.0[0] += rhs.0[0];
-	self.0[1] += rhs.0[1];
-	self.0[2] += rhs.0[2];
-    }
-}
-
-impl Diffs
-{
-    pub fn jd1(&self) -> usize
-    {
-	self.0[0]
-    }
-    pub fn jd2(&self) -> usize
-    {
-	self.0[1]
-    }
-    pub fn jd3(&self) -> usize
-    {
-	self.0[2]
-    }
-}
 
 fn parse_input(file: &str) -> Result<impl Iterator<Item = input::Int>, io::Error>
 {
@@ -77,13 +40,13 @@ fn find_smallest(map: &Adaptors, finding: impl Into<u8>) -> (Option<u8>, Diffs)
 	    {
 		let shim = finding + $l;
 		debug_assert!(shim > 0);
-		//eprintln!("Looking up {}", shim);
+		
 		match map.get(&unsafe {
 		    NonZeroU8::new_unchecked(shim)
 		}).map(|_| shim) {
 		    Some(yes) if !set => {
 			set = true;
-			diffs.0[($l-1)] += 1;
+			*diffs.at_mut($l-1) += 1;
 			Some(yes)
 		    },
 		    x => x
@@ -124,21 +87,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
 	map
     };
     debug_assert_eq!(all_jolts.num_pages(), 1); // Assert we have space efficiency.
-
-    let mut current = 0;
-    #[allow(unused_variables)]
-    let mut sum=0;
-    let mut whole_diffs = Diffs::default();
-    loop {
-	if let (Some(next), diffs) = find_smallest(&all_jolts, current) {
-	    current = next;
-	    sum+=1;
-	    whole_diffs += diffs;
+    
+    let diffs: Diffs = std::iter::successors(Some((0, Diffs::default())), |&(next, _)| {
+	if let (Some(next), d) = find_smallest(&all_jolts, next) {
+	    Some((next, d))
 	} else {
-	    break;
+	    None
 	}
-    }
-
-    println!("{}", whole_diffs.jd1() * whole_diffs.jd3());
+    }).map(|(_, d)| d).sum();
+    
+    println!("{}", diffs.jd1() * diffs.jd3());
     Ok(())
 }
