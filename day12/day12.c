@@ -8,7 +8,11 @@ typedef int64_t i64;
 typedef uint64_t u64;
 
 const char* const input[] = {
+#ifdef TEST
+#include "input-test.h"
+#else
 #include "input.h"
+#endif
 };
 #define input_sz (sizeof(input)/sizeof(char*))
 
@@ -100,10 +104,10 @@ static void handle_com(struct ship* restrict ship, command_t com)
 	case DIR_WEST:  ship->pos.x -= com.num; break;
 	case DIR_NORTH: ship->pos.y -= com.num; break;
 	case DIR_SOUTH: ship->pos.y += com.num; break;
-	
+	/* XXX: LEFT and RIGHT's num is TURN BY DEGREES, not turn, then move!?!?!??? TODO redo
 	case DIR_LEFT: ship->facing = rotl(ship->facing); if(0)
 	case DIR_RIGHT: ship->facing = rotr(ship->facing);
-
+	*/
 	case DIR_FORWARD: modsign(ship, com.num); break;
 	default: panic("Unknown command direction '%c' (%d)", (char)com.dir, (int)com.dir);
 	}
