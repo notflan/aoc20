@@ -64,6 +64,34 @@ inline static void modsign(struct ship* restrict ship, i64 by)
 	*mod += sign * by;
 }
 
+noglobal static inline enum direction rotr(enum direction s)
+{
+#define DIRECT(n) return n; case n
+	switch(s)
+	{
+	case DIR_NORTH:
+		DIRECT(DIR_EAST):
+		DIRECT(DIR_SOUTH):
+		DIRECT(DIR_WEST):
+		return DIR_NORTH;
+	default: panic("Cannot rotate direction '%c', (%d)", (char)s, (int) s);
+	}
+}
+noglobal static inline enum direction rotl(enum direction s)
+{
+	switch(s)
+	{
+	case DIR_NORTH:
+		DIRECT(DIR_WEST):
+		DIRECT(DIR_SOUTH):
+		DIRECT(DIR_EAST):
+		return DIR_NORTH;
+	default: panic("Cannot rotate direction '%c', (%d)", (char)s, (int) s);
+	}
+}
+#undef DIRECT
+
+
 static void handle_com(struct ship* restrict ship, command_t com)
 {
 	switch(com.dir)
@@ -73,11 +101,10 @@ static void handle_com(struct ship* restrict ship, command_t com)
 	case DIR_NORTH: ship->pos.y -= com.num; break;
 	case DIR_SOUTH: ship->pos.y += com.num; break;
 	
+	case DIR_LEFT: ship->facing = rotl(ship->facing); if(0)
+	case DIR_RIGHT: ship->facing = rotr(ship->facing);
+
 	case DIR_FORWARD: modsign(ship, com.num); break;
-
-	case DIR_LEFT: //TODO:
-	case DIR_RIGHT: //TODO:
-
 	default: panic("Unknown command direction '%c' (%d)", (char)com.dir, (int)com.dir);
 	}
 }

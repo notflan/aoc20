@@ -4,7 +4,7 @@ OPT_FLAGS?= -march=native -flto \
 	 -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block \
 	 -fno-stack-check -fno-strict-aliasing 
 
-CFLAGS+= -Wall -pedantic --std=gnu11 -Wextra -Wstrict-aliasing
+CFLAGS+= -Wall -pedantic --std=gnu11 -Wstrict-aliasing
 CFLAGS+= $(OPT_FLAGS)
 CFLAGS+= -O3 -pipe
 LDFLAGS?= -O3 -flto
