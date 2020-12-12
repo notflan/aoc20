@@ -21,6 +21,11 @@ CFLAGS+=-I$(INCLUDE)
 
 STRIP=strip
 
+DEFINES?=-DCATERPILLAR
+
+CFLAGS+= $(DEFINES)
+CXXFLAGS+= $(DEFINES)
+
 # Number of iterations to profile program
 PROF_ITERATIONS?=40
 # Set concurrent profiling runs to be number of *physical* cpu cores
