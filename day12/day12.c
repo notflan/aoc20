@@ -95,6 +95,24 @@ noglobal static inline enum direction rotl(enum direction s)
 }
 #undef DIRECT
 
+inline extern u64 absll(i64 n)
+{
+	return (u64)(n < 0 ? -n : n);
+}
+
+noglobal static inline enum direction rotd(enum direction from, i64 deg, enum direction by)
+{
+	deg /= 90;
+	
+	switch(by)
+	{
+	case DIR_LEFT: for(i64 i=0;i<deg;i++) from = rotl(from); break;
+	case DIR_RIGHT: for(i64 i=0;i<deg;i++) from = rotr(from); break;
+
+	default: panic("Cannot rotate direction '%c' (%d)", (char)by, (int)by);
+	}
+	return from;
+}
 
 static void handle_com(struct ship* restrict ship, command_t com)
 {
@@ -108,15 +126,19 @@ static void handle_com(struct ship* restrict ship, command_t com)
 	case DIR_LEFT: ship->facing = rotl(ship->facing); if(0)
 	case DIR_RIGHT: ship->facing = rotr(ship->facing);
 	*/
+	case DIR_RIGHT:
+	case DIR_LEFT: ship->facing = rotd(ship->facing, com.num, com.dir);
+		break;
+
 	case DIR_FORWARD: modsign(ship, com.num); break;
 	default: panic("Unknown command direction '%c' (%d)", (char)com.dir, (int)com.dir);
 	}
+#ifdef DEBUG
+	fprintf(stderr, "Current location facing %c: %ld x %ld (MD %lu)\n", (char)ship->facing, ship->pos.x, ship->pos.y, absll(ship->pos.x) + absll(ship->pos.y));
+#endif
 }
 
-inline extern u64 absll(i64 n)
-{
-	return (u64)(n < 0 ? -n : n);
-}
+
 
 int main()
 {
