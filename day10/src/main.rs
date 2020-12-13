@@ -86,12 +86,12 @@ fn iterate_adaptor_chain(map: &Adaptors, mut diffs: Option<&mut Diffs>, finding:
     }
 }
 
+#[cfg(feature="part2")] 
 mod part2;
-
 
 fn main() -> Result<(), Box<dyn std::error::Error>>
 {
-    
+    #![allow(unused_variables)]
     let (all_jolts, output_rat) = {
 	let mut map: Adaptors = conv_input(get_input()).collect();
 	let orat = map.iter().map(|&(x, _)| x).max().unwrap().get() + 3; // rating of output device
@@ -101,16 +101,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
 	(map, orat)
     };
     debug_assert_eq!(all_jolts.num_pages(), 1); // Assert we have space efficiency.
-    
-    let diffs: Diffs = std::iter::successors(Some((0, Diffs::default())), |&(next, _)| {
-	if let (Some(next), d) = find_smallest(&all_jolts, next) {
-	    Some((next, d))
-	} else {
-	    None
-	}
-    }).map(|(_, d)| d).sum();
-    
-    println!("{}", diffs.jd1() * diffs.jd3());
+
+    #[cfg(not(feature="part2"))] 
+    {
+	let diffs: Diffs = std::iter::successors(Some((0, Diffs::default())), |&(next, _)| {
+	    if let (Some(next), d) = find_smallest(&all_jolts, next) {
+		Some((next, d))
+	    } else {
+		None
+	    }
+	}).map(|(_, d)| d).sum();
+	
+	println!("{}", diffs.jd1() * diffs.jd3());
+    }
+    #[cfg(feature="part2")] 
     println!("{}", {
 	//let start = all_jolts.iter().map(|&(k, _)| u8::from(k)).min().unwrap();
 	part2::solve(all_jolts, output_rat)
