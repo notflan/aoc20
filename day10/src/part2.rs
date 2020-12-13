@@ -110,6 +110,7 @@ fn rec_part2(map: Arc<Adaptors>, cache: Arc<Cache>, lock: Semaphore<()>, max: u8
 		    let lock = lock.clone();
 		    if let Ok(_guard) = lock.try_access() {
 			Deffered::Yielded(thread::spawn(move || {
+			    let _guard = _guard; // move guard into new thread
 			    cache.clone().insert(next, rec_part2(map, cache, lock, max, next))
 			}))
 		    } else {
