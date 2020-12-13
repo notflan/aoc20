@@ -8,10 +8,12 @@ edition = "2018"
 
 [features]
 
-part2=[]
+part2=["num_cpus", "semaphore"]
 test = []
 
 [dependencies]
 ad-hoc-iter = "0.2.2"
 cfg-if = "1.0.0"
+num_cpus = {version = "1.13.0", optional = true}
+semaphore = {version = "0.4.0", optional = true}
 smallmap = "1.2.1"
