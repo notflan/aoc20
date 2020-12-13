@@ -92,9 +92,6 @@ impl Deffered
 
 fn rec_part2(map: Arc<Adaptors>, cache: Arc<Cache>, lock: Semaphore<()>, max: u8, f: u8) -> usize
 {
-    if f == max {
-	return 1;
-    }
     debug_assert!(f < max);
 
     match iterate_adaptor_chain(&map, None, f).map(|next| {
@@ -121,7 +118,7 @@ fn rec_part2(map: Arc<Adaptors>, cache: Arc<Cache>, lock: Semaphore<()>, max: u8
 	}
     }).map(Deffered::into_value)
 	.sum::<usize>() {
-	    #[cold] 0 => panic!("eh"),
+	    #[cold] 0 => unreachable!(),
 	    x => x,
 	}
 }
