@@ -28,12 +28,13 @@ fn parse_input(file: &str) -> Result<impl Iterator<Item = input::Int>, io::Error
     Ok(input::read_input(BufReader::new(file)))
 }
 
-fn find_smallest(map: &Adaptors, finding: impl Into<u8>) -> (Option<u8>, Diffs)
+/// Get an iterator over the possible adaptors after the adaptor `finding`. The iterator will be between 0 and 3 elements.
+/// Which adaptor has been changed *first* is increased in `diffs` if it is provided.
+fn iterate_adaptor_chain(map: &Adaptors, mut diffs: Option<&mut Diffs>, finding: impl Into<u8>) -> impl Iterator<Item = u8>
 {
     #![allow(unused_assignments)]
 
     let finding = finding.into();
-    let mut diffs = Diffs::default();
     let mut set=false;    
     macro_rules! find {
 	($l:literal) => {
@@ -46,7 +47,9 @@ fn find_smallest(map: &Adaptors, finding: impl Into<u8>) -> (Option<u8>, Diffs)
 		}).map(|_| shim) {
 		    Some(yes) if !set => {
 			set = true;
-			*diffs.at_mut($l-1) += 1;
+			if let Some(diffs) = diffs.as_mut() {
+			    *diffs.at_mut($l-1) += 1;
+			}
 			Some(yes)
 		    },
 		    x => x
@@ -54,12 +57,17 @@ fn find_smallest(map: &Adaptors, finding: impl Into<u8>) -> (Option<u8>, Diffs)
 	    }
 	}
     };
-    (iter![
+    iter![
 	find!(1),
 	find!(2),
 	find!(3)
     ].filter_map(std::convert::identity)
-     .min(), diffs)
+}
+
+#[inline] fn find_smallest(map: &Adaptors, finding: impl Into<u8>) -> (Option<u8>, Diffs)
+{
+    let mut diffs = Diffs::default();
+    (iterate_adaptor_chain(map, Some(&mut diffs), finding).min(), diffs)
 }
 
 #[inline(always)] fn conv_input(input: impl Iterator<Item=input::Int>) -> impl Iterator<Item = (NonZeroU8, ())>
@@ -77,14 +85,20 @@ fn find_smallest(map: &Adaptors, finding: impl Into<u8>) -> (Option<u8>, Diffs)
 	}   
     }
 }
+
+mod part2;
+
+
 fn main() -> Result<(), Box<dyn std::error::Error>>
 {
-    let all_jolts = {
+    
+    let (all_jolts, output_rat) = {
 	let mut map: Adaptors = conv_input(get_input()).collect();
+	let orat = map.iter().map(|&(x, _)| x).max().unwrap().get() + 3; // rating of output device
 	unsafe {
-	    map.insert(NonZeroU8::new_unchecked(map.iter().map(|&(x, _)| x).max().unwrap().get() + 3), ());
+	    map.insert(NonZeroU8::new_unchecked(orat), ());
 	}
-	map
+	(map, orat)
     };
     debug_assert_eq!(all_jolts.num_pages(), 1); // Assert we have space efficiency.
     
@@ -97,5 +111,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
     }).map(|(_, d)| d).sum();
     
     println!("{}", diffs.jd1() * diffs.jd3());
+    println!("{}", {
+	//let start = all_jolts.iter().map(|&(k, _)| u8::from(k)).min().unwrap();
+	part2::solve(all_jolts, output_rat)
+    });
     Ok(())
 }
