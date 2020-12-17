@@ -96,14 +96,15 @@ static void _map_walk(map_t* restrict map, void (*cb)(struct page* page))
 	struct page* page=  map->page0;
 	while(page)
 	{
+		register struct page* next = page->next;
 		cb(page);
-		page = page->next;
+		page = next;
 	}
 }
 
 static void _map_page_clear(struct page* page)
 {
-	memset(page, 0, sizeof(struct page));
+	memset(page->p, 0, sizeof(struct entry) * PAGE_SIZE);
 }
 
 void map_clear(map_t* restrict map)
